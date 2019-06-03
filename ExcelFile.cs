@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Data;
@@ -6,6 +6,7 @@ using FastMember;
 using ClosedXML.Excel;
 using System.Dynamic;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
 
 namespace HerramientasNicolas.App_Code
 {
@@ -56,7 +57,7 @@ namespace HerramientasNicolas.App_Code
                 //create datatable
                 DataTable table = new DataTable();
 
-                //add columns 
+                //add columns
                 foreach (PropertyDescriptor prop in properties)
                     table.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
 
@@ -138,6 +139,14 @@ namespace HerramientasNicolas.App_Code
 
                 if (String.IsNullOrEmpty(this.Name.Trim()))
                     throw new Exception("The name of the file can't be empty.");
+
+                if (this.Sheets.Tables.Count == 0)
+                    throw new Exception("You must add at least one sheet on the sheets collection.");
+
+                if (!String.IsNullOrEmpty(Regex.Match(this.Name, @".\w+$").Value))
+                    this.Name = (this.Name.Replace(Regex.Match(this.Name, @".\w+$").Value, ".xlsx"));
+                else
+                    this.Name = this.Name += ".xlsx";
             }
             catch (Exception ex)
             {
