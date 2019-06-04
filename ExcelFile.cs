@@ -15,9 +15,17 @@ namespace HerramientasNicolas.App_Code
         public string FileName { get; set; }
 
         //constructors
-        //constructors to create a file
+        /// <summary>
+        /// Creates an empty instance of ExcelFile.
+        /// </summary>
         public ExcelFile() : base() { }
 
+        /// <summary>
+        /// Creates an instance of ExcelFile using a DataSet as the data source for the workbook.
+        /// </summary>
+        /// <param name="sheets"></param>
+        /// <param name="path"></param>
+        /// <param name="fileName"></param>
         public ExcelFile(DataSet sheets, string path, string fileName)
         {
             this.Worksheets.Add(sheets);
@@ -25,6 +33,12 @@ namespace HerramientasNicolas.App_Code
             FileName = fileName;
         }
 
+        /// <summary>
+        /// Creates an instance of ExcelFile using a single DataTable as the data source for the workbook.
+        /// </summary>
+        /// <param name="sheet"></param>
+        /// <param name="path"></param>
+        /// <param name="fileName"></param>
         public ExcelFile(DataTable sheet, string path, string fileName)
         {
             DataSet ds = new DataSet();
@@ -35,6 +49,12 @@ namespace HerramientasNicolas.App_Code
             FileName = fileName;
         }
 
+        /// <summary>
+        /// Creates an instance of ExcelFile using a List<dynamic> as the data source for the workbook.
+        /// </summary>
+        /// <param name="sheet"></param>
+        /// <param name="path"></param>
+        /// <param name="fileName"></param>
         public ExcelFile(List<dynamic> sheet, string path, string fileName)
         {
             DataSet ds = new DataSet();
@@ -45,6 +65,12 @@ namespace HerramientasNicolas.App_Code
             FileName = fileName;
         }
 
+        /// <summary>
+        /// Creates an instance of ExcelFile using a List<List<dynamic> as the data source for the workbook.
+        /// </summary>
+        /// <param name="sheets"></param>
+        /// <param name="path"></param>
+        /// <param name="fileName"></param>
         public ExcelFile(List<List<dynamic>> sheets, string path, string fileName)
         {
             this.Worksheets.Add(ConvertListToDataSet(sheets));
@@ -53,6 +79,10 @@ namespace HerramientasNicolas.App_Code
         }
 
         //constructors to read excel from a file
+        /// <summary>
+        /// Creates an instance of ExcelFile using a path to read an excel from a file.
+        /// </summary>
+        /// <param name="path"></param>
         public ExcelFile(string path) : base(path)
         {
             FileName = Regex.Match(path, @"\w+\.\w+$").Value;
@@ -60,6 +90,9 @@ namespace HerramientasNicolas.App_Code
         }
 
         //functions
+        /// <summary>
+        /// Creates an Excel file in the indicated path with the indicated name.
+        /// </summary>
         public void CreateExcel()
         {
             try
@@ -82,11 +115,20 @@ namespace HerramientasNicolas.App_Code
             }
         }
 
+        /// <summary>
+        /// Returns the worksheet at the indicated index in the workbook as a DataTable.
+        /// </summary>
+        /// <param name="worksheetIndex"></param>
+        /// <returns></returns>
         public DataTable GetWorksheetAsDataTable(int worksheetIndex)
         {
             return GetDataTableFromWorksheet(this.Worksheets.Worksheet(worksheetIndex));
         }
 
+        /// <summary>
+        /// Returns the workbook as a DataSet.
+        /// </summary>
+        /// <returns></returns>
         public DataSet GetWorkbookAsDataSet()
         {
             DataSet dsWorksheets = new DataSet();
@@ -134,6 +176,7 @@ namespace HerramientasNicolas.App_Code
             }
             return dtWorksheet;
         }
+
         protected static DataTable ConvertListToDataTable(List<dynamic> listObject, string tableName)
         {
             try
