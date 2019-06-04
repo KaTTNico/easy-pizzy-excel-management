@@ -2,52 +2,139 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Data;
-using FastMember;
 using ClosedXML.Excel;
-using System.Dynamic;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace HerramientasNicolas.App_Code
 {
-    public class ExcelFile
+    public class ExcelFile : XLWorkbook
     {
-        //attributes
-        private DataSet sheets;
-        private string path;
-        private string name;
-
         //properties
-        public DataSet Sheets
-        {
-            get { return sheets; }
-            set { sheets = value; }
-        }
-
-        public string Path
-        {
-            get { return path; }
-            set { path = value; }
-        }
-
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
+        public string Path { get; set; }
+        public string FileName { get; set; }
 
         //constructors
-        public ExcelFile() { }
+        //constructors to create a file
+        public ExcelFile() : base() { }
 
-        public ExcelFile(DataSet _sheets, string _path, string _name)
+        public ExcelFile(DataSet sheets, string path, string fileName)
         {
-            Sheets = _sheets;
-            Path = _path;
-            Name = _name;
+            this.Worksheets.Add(sheets);
+            Path = path;
+            FileName = fileName;
+        }
+
+        public ExcelFile(DataTable sheet, string path, string fileName)
+        {
+            DataSet ds = new DataSet();
+            ds.Tables.Add(sheet);
+
+            this.Worksheets.Add(ds);
+            Path = path;
+            FileName = fileName;
+        }
+
+        public ExcelFile(List<dynamic> sheet, string path, string fileName)
+        {
+            DataSet ds = new DataSet();
+            ds.Tables.Add(ConvertListToDataTable(sheet, ""));
+
+            this.Worksheets.Add(ds);
+            Path = path;
+            FileName = fileName;
+        }
+
+        public ExcelFile(List<List<dynamic>> sheets, string path, string fileName)
+        {
+            this.Worksheets.Add(ConvertListToDataSet(sheets));
+            Path = path;
+            FileName = fileName;
+        }
+
+        //constructors to read excel from a file
+        public ExcelFile(string path) : base(path)
+        {
+            FileName = Regex.Match(path, @"\w+\.\w+$").Value;
+            Path = path.Replace(Regex.Match(path, @"\w+\.\w+$").Value, "");
         }
 
         //functions
-        public static DataTable ConvertListToDataTable(List<dynamic> listObject, string tableName)
+        public void CreateExcel()
+        {
+            try
+            {
+                //check this excel
+                CheckExcelObject();
+
+                //delete if exists
+                if (File.Exists(this.Path + this.FileName))
+                    File.Delete(this.Path + this.FileName);
+
+                this.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                this.Style.Font.Bold = true;
+                this.SaveAs((this.Path + this.FileName));
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public DataTable GetWorksheetAsDataTable(int worksheetIndex)
+        {
+            return GetDataTableFromWorksheet(this.Worksheets.Worksheet(worksheetIndex));
+        }
+
+        public DataSet GetWorkbookAsDataSet()
+        {
+            DataSet dsWorksheets = new DataSet();
+            //loop through the worksheets
+            foreach (IXLWorksheet worksheet in this.Worksheets)
+            {
+                //add datatable
+                dsWorksheets.Tables.Add(GetDataTableFromWorksheet(worksheet));
+            }
+            return dsWorksheets;
+        }
+
+        //internal functions 
+        protected DataTable GetDataTableFromWorksheet(IXLWorksheet worksheet)
+        {
+            //Create a new DataTable.
+            DataTable dtWorksheet = new DataTable();
+
+            //Read Sheet from Excel file.
+            //Loop through the Worksheet rows.
+            bool firstRow = true;
+            foreach (IXLRow row in worksheet.Rows())
+            {
+                //Use the first row to add columns to DataTable.
+                if (firstRow)
+                {
+                    foreach (IXLCell cell in row.Cells())
+                    {
+                        dtWorksheet.Columns.Add(cell.Value.ToString());
+                    }
+                    firstRow = false;
+                }
+                else
+                {
+                    //Add rows to DataTable.
+                    dtWorksheet.Rows.Add();
+                    int i = 0;
+
+                    foreach (IXLCell cell in row.Cells(row.FirstCellUsed().Address.ColumnNumber, row.LastCellUsed().Address.ColumnNumber))
+                    {
+                        dtWorksheet.Rows[dtWorksheet.Rows.Count - 1][i] = cell.Value.ToString();
+                        i++;
+                    }
+                }
+            }
+            return dtWorksheet;
+        }
+        protected static DataTable ConvertListToDataTable(List<dynamic> listObject, string tableName)
         {
             try
             {
@@ -71,7 +158,7 @@ namespace HerramientasNicolas.App_Code
 
                     table.Rows.Add(row);
                 }
-                table.TableName = tableName;
+                table.TableName = String.IsNullOrEmpty(tableName) ? "sheet1" : tableName;
 
                 return table;
             }
@@ -81,7 +168,7 @@ namespace HerramientasNicolas.App_Code
             }
         }
 
-        public static DataSet ConvertListToDataSet(List<List<dynamic>> listObjects)
+        protected static DataSet ConvertListToDataSet(List<List<dynamic>> listObjects)
         {
             try
             {
@@ -101,52 +188,20 @@ namespace HerramientasNicolas.App_Code
             }
         }
 
-        public void CreateExcel()
+        protected void CheckExcelObject()
         {
             try
             {
-                //check this excel
-                CheckExcelObject();
+                if (String.IsNullOrEmpty(this.Path.Trim())) throw new Exception("The path can't be empty.");
 
-                //delete if exists
-                if (File.Exists(this.Path + this.Name))
-                    File.Delete(this.Path + this.Name);
+                if (!Directory.Exists(this.Path)) throw new Exception("The path directory is incorrect. '" + this.Path + "'");
 
-                using (XLWorkbook wb = new XLWorkbook())
-                {
-                    //create excel
-                    wb.Worksheets.Add(this.Sheets);
-                    wb.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    wb.Style.Font.Bold = true;
-                    wb.SaveAs((this.Path + this.Name));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+                if (String.IsNullOrEmpty(this.FileName.Trim())) throw new Exception("The name of the file can't be empty.");
 
-        internal void CheckExcelObject()
-        {
-            try
-            {
-                if (String.IsNullOrEmpty(this.Path.Trim()))
-                    throw new Exception("The path can't be empty.");
+                if (this.Worksheets.Count == 0) throw new Exception("You must add at least one sheet on the sheets collection.");
 
-                if (!Directory.Exists(this.Path))
-                    throw new Exception("The path directory is incorrect. '" + this.Path + "'");
-
-                if (String.IsNullOrEmpty(this.Name.Trim()))
-                    throw new Exception("The name of the file can't be empty.");
-
-                if (this.Sheets.Tables.Count == 0)
-                    throw new Exception("You must add at least one sheet on the sheets collection.");
-
-                if (!String.IsNullOrEmpty(Regex.Match(this.Name, @".\w+$").Value))
-                    this.Name = (this.Name.Replace(Regex.Match(this.Name, @".\w+$").Value, ".xlsx"));
-                else
-                    this.Name = this.Name += ".xlsx";
+                if (!String.IsNullOrEmpty(Regex.Match(this.FileName, @".\w+$").Value)) this.FileName = (this.FileName.Replace(Regex.Match(this.FileName, @".\w+$").Value, ".xlsx"));
+                else this.FileName = this.FileName += ".xlsx";
             }
             catch (Exception ex)
             {
