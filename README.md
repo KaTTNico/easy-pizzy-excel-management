@@ -37,3 +37,8 @@ Creates an Excel file in the indicated path with the indicated name.
 Returns the worksheet at the indicated index in the workbook as a DataTable.
 When you create an instance of ExcelFile using the constructor number 6 it means you are reading an existing excel file.
 With this instance you can call this method to get the index indicated worksheet converted to a datatable.
+
+(3) DataSet GetWorkbookAsDataSet():
+Returns the workbook as a DataSet.
+When you create an instance of ExcelFile using the constructor number 6 it means you are reading an existing excel file.
+With this instance you can call this method to get the entire workbook converted to a dataset with each worksheet as a dataset.
