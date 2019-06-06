@@ -6,6 +6,9 @@ using ClosedXML.Excel;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
+/// <summary>Easy pizzy excel files management.</summary>
+/// 
+/// <author>Nicolas Aguirre</author>
 namespace HerramientasNicolas.App_Code
 {
     public class ExcelFile : XLWorkbook
@@ -86,7 +89,7 @@ namespace HerramientasNicolas.App_Code
         public ExcelFile(string path) : base(path)
         {
             FileName = Regex.Match(path, @"\w+\.\w+$").Value;
-            Path = path.Replace(Regex.Match(path, @"\w+\.\w+$").Value, "");
+            Path = path.Replace(Regex.Match(path, @"(\\|\/|\\{2}|\/{2})\w+\.\w+$").Value, "");
         }
 
         //functions
@@ -106,6 +109,7 @@ namespace HerramientasNicolas.App_Code
 
                 this.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 this.Style.Font.Bold = true;
+
                 this.SaveAs((this.Path + this.FileName));
 
             }
@@ -122,6 +126,9 @@ namespace HerramientasNicolas.App_Code
         /// <returns></returns>
         public DataTable GetWorksheetAsDataTable(int worksheetIndex)
         {
+            if (this.Worksheets.Worksheet(worksheetIndex) == null)
+                return null;
+
             return GetDataTableFromWorksheet(this.Worksheets.Worksheet(worksheetIndex));
         }
 
@@ -131,6 +138,9 @@ namespace HerramientasNicolas.App_Code
         /// <returns></returns>
         public DataSet GetWorkbookAsDataSet()
         {
+            if (this.Worksheets.Count == 0)
+                return null;
+
             DataSet dsWorksheets = new DataSet();
             //loop through the worksheets
             foreach (IXLWorksheet worksheet in this.Worksheets)
