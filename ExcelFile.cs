@@ -144,10 +144,9 @@ namespace HerramientasNicolas.App_Code
             DataSet dsWorksheets = new DataSet();
             //loop through the worksheets
             foreach (IXLWorksheet worksheet in this.Worksheets)
-            {
                 //add datatable
                 dsWorksheets.Tables.Add(GetDataTableFromWorksheet(worksheet));
-            }
+            
             return dsWorksheets;
         }
 
@@ -166,9 +165,8 @@ namespace HerramientasNicolas.App_Code
                 if (firstRow)
                 {
                     foreach (IXLCell cell in row.Cells())
-                    {
                         dtWorksheet.Columns.Add(cell.Value.ToString());
-                    }
+                    
                     firstRow = false;
                 }
                 else
